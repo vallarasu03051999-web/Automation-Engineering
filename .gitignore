@@ -1,0 +1,7 @@
+node_modules/
+dist/
+/playwright/.cache/
+
+# Raw per-run artifacts (traces, duplicate videos, screenshots) — the committed
+# deliverable is /playwright-report/, which already embeds the report + video.
+/test-results/

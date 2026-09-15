@@ -1,0 +1,694 @@
+<!doctype html>
+<title>Employee Lifecycle Test Docs</title>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap"
+/>
+<style>
+  /* ---------- tokens ---------- */
+  :root {
+    --paper: #f5f6f3;
+    --surface: #ffffff;
+    --ink: #16211c;
+    --ink-muted: #4b5a52;
+    --ink-faint: #7c887f;
+    --line: #d8ded7;
+    --line-soft: #e7ebe4;
+
+    --accent: #35507a;
+    --accent-strong: #253a5c;
+    --accent-soft: #e7ecf3;
+
+    --success: #1f8a55;
+    --success-soft: #e3f3ea;
+    --danger: #c23b3b;
+    --danger-soft: #fbeaea;
+    --amber: #a5690a;
+    --amber-soft: #fbf0df;
+
+    --code-bg: #101815;
+    --code-fg: #e7efe9;
+    --code-line: #263029;
+
+    --shadow: 0 1px 2px rgba(22, 33, 28, 0.06), 0 8px 24px -12px rgba(22, 33, 28, 0.18);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #10151a;
+      --surface: #161c20;
+      --ink: #e7ece7;
+      --ink-muted: #97a69c;
+      --ink-faint: #6c796f;
+      --line: #26312b;
+      --line-soft: #1d2620;
+
+      --accent: #8fb0e0;
+      --accent-strong: #b7cdec;
+      --accent-soft: #1e2a3c;
+
+      --success: #4cc189;
+      --success-soft: #123324;
+      --danger: #e07272;
+      --danger-soft: #3a1b1b;
+      --amber: #e0a94a;
+      --amber-soft: #3a2c10;
+
+      --code-bg: #0a0f0d;
+      --code-fg: #dce7df;
+      --code-line: #1c2620;
+
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #10151a;
+    --surface: #161c20;
+    --ink: #e7ece7;
+    --ink-muted: #97a69c;
+    --ink-faint: #6c796f;
+    --line: #26312b;
+    --line-soft: #1d2620;
+
+    --accent: #8fb0e0;
+    --accent-strong: #b7cdec;
+    --accent-soft: #1e2a3c;
+
+    --success: #4cc189;
+    --success-soft: #123324;
+    --danger: #e07272;
+    --danger-soft: #3a1b1b;
+    --amber: #e0a94a;
+    --amber-soft: #3a2c10;
+
+    --code-bg: #0a0f0d;
+    --code-fg: #dce7df;
+    --code-line: #1c2620;
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+  }
+
+  /* ---------- base ---------- */
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
+    font-size: 16.5px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--accent-soft); color: var(--accent-strong); }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+  h1, h2, h3, h4 {
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    color: var(--ink);
+    text-wrap: balance;
+    margin: 0;
+  }
+  code, .mono {
+    font-family: "IBM Plex Mono", ui-monospace, "SF Mono", Consolas, monospace;
+  }
+  p { margin: 0 0 1em; max-width: 66ch; }
+  p:last-child { margin-bottom: 0; }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding-inline: clamp(16px, 4vw, 48px);
+    padding-block: clamp(28px, 5vw, 56px) 80px;
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-bottom: 28px;
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--line);
+  }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .masthead h1 {
+    font-size: clamp(28px, 4vw, 38px);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .masthead .dek {
+    color: var(--ink-muted);
+    font-size: 17px;
+    max-width: 62ch;
+  }
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-muted);
+  }
+  .badge.pass { color: var(--success); background: var(--success-soft); border-color: transparent; }
+  .badge.pass::before { content: "●"; font-size: 8px; }
+  .badge.accent { color: var(--accent-strong); background: var(--accent-soft); border-color: transparent; }
+
+  /* ---------- layout: rail + content ---------- */
+  .layout {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: clamp(24px, 4vw, 56px);
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    .rail { display: none; }
+  }
+  .rail {
+    position: sticky;
+    top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+  }
+  .rail-label {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 8px;
+  }
+  .rail a {
+    color: var(--ink-muted);
+    text-decoration: none;
+    padding: 5px 0;
+    border-left: 2px solid transparent;
+    padding-left: 10px;
+  }
+  .rail a:hover { color: var(--ink); border-left-color: var(--line); }
+
+  main { min-width: 0; }
+  section { margin-bottom: 56px; scroll-margin-top: 20px; }
+  section > h2 {
+    font-size: 21px;
+    font-weight: 600;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  section > h2 .num {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    color: var(--ink-faint);
+  }
+  .section-intro { color: var(--ink-muted); margin-top: 10px; margin-bottom: 22px; }
+
+  /* ---------- pipeline (UI steps) ---------- */
+  .pipeline { display: flex; flex-direction: column; }
+  .step {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 16px;
+    padding-block: 18px;
+    border-top: 1px solid var(--line-soft);
+  }
+  .step:last-child { border-bottom: 1px solid var(--line-soft); }
+  .step-num {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .step-body h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .step-body p { color: var(--ink-muted); font-size: 15.5px; margin-bottom: 10px; }
+  .kv-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    align-items: center;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+  }
+  .kv-row .tag {
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 10.5px;
+  }
+  .pill {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 2px 7px;
+    color: var(--ink);
+  }
+  .pill.result { color: var(--success); border-color: transparent; background: var(--success-soft); }
+
+  /* ---------- api cards ---------- */
+  .api-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  .api-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 18px 16px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .verb-row { display: flex; align-items: center; gap: 8px; font-family: "IBM Plex Mono", monospace; font-size: 13px; }
+  .verb {
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11.5px;
+    letter-spacing: 0.03em;
+  }
+  .verb.post { color: var(--success); background: var(--success-soft); }
+  .verb.put { color: var(--amber); background: var(--amber-soft); }
+  .verb.delete { color: var(--danger); background: var(--danger-soft); }
+  .api-card .path { color: var(--ink); }
+  .api-card .purpose { color: var(--ink-muted); font-size: 14.5px; font-family: "Source Serif 4", serif; }
+  .api-card .status { margin-top: auto; font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-faint); }
+  .api-card .status b { color: var(--success); }
+
+  .callout {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--amber);
+    background: var(--amber-soft);
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-size: 15px;
+    color: var(--ink);
+    margin-top: 18px;
+  }
+  .callout b { color: var(--amber); font-family: "IBM Plex Sans", sans-serif; }
+
+  /* ---------- code blocks ---------- */
+  .code-block {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    border-radius: 10px;
+    padding: 16px 18px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13.5px;
+    line-height: 1.7;
+    overflow-x: auto;
+    box-shadow: var(--shadow);
+  }
+  .code-block .c1 { color: #7c9184; }
+  .code-block .c2 { color: #9ec6ff; }
+  .run-grid { display: grid; gap: 14px; margin-top: 16px; }
+  .run-item { display: grid; grid-template-columns: minmax(0,1fr); gap: 6px; }
+  .run-item .label { font-family: "IBM Plex Sans", sans-serif; font-size: 14px; font-weight: 600; }
+  .run-item .desc { color: var(--ink-muted); font-size: 14px; }
+
+  /* ---------- tables ---------- */
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; min-width: 480px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  th { font-family: "IBM Plex Sans", sans-serif; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); font-weight: 600; background: var(--paper); }
+  tr:last-child td { border-bottom: none; }
+  td code { font-size: 13px; background: var(--line-soft); padding: 1px 5px; border-radius: 4px; }
+
+  /* ---------- file tree ---------- */
+  .tree {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13.5px;
+    line-height: 1.85;
+    color: var(--ink-muted);
+    overflow-x: auto;
+    box-shadow: var(--shadow);
+  }
+  .tree .dir { color: var(--accent); }
+  .tree .comment { color: var(--ink-faint); }
+
+  footer {
+    margin-top: 64px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-faint);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    section { animation: rise 420ms ease both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">QA Automation — Test Documentation</div>
+    <h1>Employee Lifecycle Test Docs</h1>
+    <p class="dek">
+      Playwright + TypeScript end-to-end coverage of the OrangeHRM
+      <b>Employee Lifecycle Management</b> flow — login, create, edit, API
+      cross-check, delete, logout — run as one scenario against
+      <code>opensource-demo.orangehrmlive.com</code>.
+    </p>
+    <div class="badges">
+      <span class="badge pass">6 / 6 steps passing</span>
+      <span class="badge accent">Page Object Model</span>
+      <span class="badge">Playwright Test</span>
+      <span class="badge">TypeScript</span>
+      <span class="badge">last verified run · 1m 54s</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="rail" aria-label="Sections">
+      <div class="rail-label">On this page</div>
+      <a href="#overview">Overview</a>
+      <a href="#ui-flow">UI test flow</a>
+      <a href="#api">API validation</a>
+      <a href="#data">Data-driven input</a>
+      <a href="#run">How to run</a>
+      <a href="#structure">Project structure</a>
+      <a href="#deps">Dependencies</a>
+      <a href="#notes">Notes &amp; caveats</a>
+    </nav>
+
+    <main>
+
+      <section id="overview">
+        <h2><span class="num">01</span> Overview</h2>
+        <p class="section-intro">
+          One test file, six sequential <code>test.step()</code> blocks, one employee record
+          taken from birth to deletion. The UI is driven through a Page Object Model
+          (<a href="#structure">see structure</a>); the API step mirrors the same record
+          against a public test API so the scenario has something to cross-check against,
+          since the demo site exposes no key-free REST API of its own.
+        </p>
+        <div class="callout">
+          <b>Why an external API?</b> OrangeHRM's real PIM API needs an authenticated
+          session + CSRF token — there's nothing public to hit. Per the assessment's own
+          suggestion, Step 4 simulates the "validate via API" requirement against
+          <a href="https://reqres.in" target="_blank" rel="noopener">ReqRes</a>, a public
+          test API that echoes back whatever it's sent, and asserts that echo matches what
+          was just entered in the UI.
+        </div>
+      </section>
+
+      <section id="ui-flow">
+        <h2><span class="num">02</span> UI test flow</h2>
+        <p class="section-intro">
+          Six steps, run in order — each depends on the record the previous step created,
+          so they execute as one continuous scenario rather than isolated tests.
+        </p>
+
+        <div class="pipeline">
+
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h3>Login</h3>
+              <p>Submit <code>Admin</code> / <code>admin123</code> on the login form.</p>
+              <div class="kv-row">
+                <span class="tag">asserts</span>
+                <span class="pill">URL matches /dashboard/index</span>
+                <span class="pill">"Dashboard" breadcrumb visible</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h3>Add employee</h3>
+              <p>PIM → Add Employee. Fill first/last name and a generated Employee ID, upload
+                <code>assets/profile-picture.png</code>, save.</p>
+              <div class="kv-row">
+                <span class="tag">asserts</span>
+                <span class="pill result">toast: "Successfully Saved"</span>
+                <span class="pill">Personal Details shows the same Employee ID</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h3>Edit — Job Title &amp; Employment Status</h3>
+              <p>Search the employee list by Employee ID, open the record, switch to the
+                Job tab, change both fields on the custom OrangeHRM dropdown widgets, save.</p>
+              <div class="kv-row">
+                <span class="tag">asserts</span>
+                <span class="pill result">toast: "Successfully Updated"</span>
+                <span class="pill">fields display new values</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <h3>Validate via API</h3>
+              <p><code>PUT</code> the same job title / employment status to the mirrored
+                API record, then reload the Job tab to prove the UI change survived a
+                fresh read, not just local component state.</p>
+              <div class="kv-row">
+                <span class="tag">asserts</span>
+                <span class="pill result">API payload = UI values</span>
+                <span class="pill">values persist after reload</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-body">
+              <h3>Delete</h3>
+              <p>Delete the row via its trash icon, confirm the dialog, then re-search the
+                same Employee ID.</p>
+              <div class="kv-row">
+                <span class="tag">asserts</span>
+                <span class="pill result">toast: "Successfully Deleted"</span>
+                <span class="pill">re-search → "No Records Found"</span>
+                <span class="pill">API delete → 204</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">6</div>
+            <div class="step-body">
+              <h3>Logout / session check</h3>
+              <p>Open the user menu, log out, then request <code>/dashboard/index</code>
+                directly — a real session-invalidation check, not just a one-time redirect.</p>
+              <div class="kv-row">
+                <span class="tag">asserts</span>
+                <span class="pill result">redirected to /auth/login</span>
+                <span class="pill">direct dashboard visit also bounces to /auth/login</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <section id="api">
+        <h2><span class="num">03</span> API validation</h2>
+        <p class="section-intro">
+          Each UI action gets a matching call against <code>reqres.in</code>, and the test
+          asserts the response echoes the same values the UI just showed.
+        </p>
+        <div class="api-grid">
+          <div class="api-card">
+            <div class="verb-row"><span class="verb post">POST</span><span class="path">/api/users</span></div>
+            <div class="purpose">Mirrors Step 2 — sends <code>employeeId</code>, <code>firstName</code>, <code>lastName</code> right after the UI save.</div>
+            <div class="status">expect <b>201</b> · body echoes all three fields back</div>
+          </div>
+          <div class="api-card">
+            <div class="verb-row"><span class="verb put">PUT</span><span class="path">/api/users/:id</span></div>
+            <div class="purpose">Mirrors Step 4 — sends the new <code>jobTitle</code> and <code>employmentStatus</code> set in Step 3.</div>
+            <div class="status">expect <b>200</b> · body echoes both fields back</div>
+          </div>
+          <div class="api-card">
+            <div class="verb-row"><span class="verb delete">DELETE</span><span class="path">/api/users/:id</span></div>
+            <div class="purpose">Mirrors Step 5 — deletes the mirrored record right after the UI delete.</div>
+            <div class="status">expect <b>204</b> No Content</div>
+          </div>
+        </div>
+        <div class="callout">
+          <b>One real bug this caught:</b> the client's base URL was originally
+          <code>https://reqres.in/api</code> with request paths starting <code>/users</code>.
+          Per WHATWG URL rules, a leading slash resolves as an <i>absolute</i> path against
+          the origin — so every request silently dropped <code>/api</code> and 404'd. Fixed by
+          keeping the base URL as the bare origin and writing <code>/api/users</code> in full
+          on every call — see <code>src/utils/apiClient.ts</code>.
+        </div>
+        <p class="section-intro" style="margin-top:18px; margin-bottom:0;">
+          These three calls run two ways: inline inside the UI scenario above (cross-checking
+          against whatever the UI just did), and as three
+          <a href="#run">standalone tests</a> in <code>tests/api/employee-api.spec.ts</code> that
+          create their own data and need no browser at all — for when you want the API layer
+          checked on its own.
+        </p>
+      </section>
+
+      <section id="data">
+        <h2><span class="num">04</span> Data-driven input</h2>
+        <p class="section-intro">
+          Nothing above is hardcoded in the test — it's all read from
+          <code>data/employee.json</code> at run time.
+        </p>
+        <div class="code-block"><span class="c1">// data/employee.json</span>
+{
+  <span class="c2">"newEmployee"</span>: {
+    <span class="c2">"firstName"</span>: "Ayesha",
+    <span class="c2">"lastName"</span>: "Karim",
+    <span class="c2">"employeeIdPrefix"</span>: "QA",
+    <span class="c2">"profilePicture"</span>: "assets/profile-picture.png"
+  },
+  <span class="c2">"jobUpdate"</span>: {
+    <span class="c2">"jobTitle"</span>: "QA Engineer",
+    <span class="c2">"employmentStatus"</span>: "Full-Time Permanent"
+  },
+  <span class="c2">"credentials"</span>: { <span class="c2">"username"</span>: "Admin", <span class="c2">"password"</span>: "admin123" }
+}</div>
+        <p class="section-intro" style="margin-top:14px; margin-bottom:0;">
+          The Employee ID itself isn't in the file — <code>generateUniqueEmployeeId()</code>
+          appends the last 6 digits of the current timestamp to the <code>QA</code> prefix at
+          run time, so repeat runs never collide with a record from a previous run.
+        </p>
+      </section>
+
+      <section id="run">
+        <h2><span class="num">05</span> How to run</h2>
+        <div class="code-block">npm install
+npx playwright install chromium</div>
+        <div class="run-grid">
+          <div class="run-item">
+            <div class="label mono">npm test</div>
+            <div class="desc">Everything — the UI scenario plus the 3 standalone API tests. Produces the HTML report and a video recording.</div>
+          </div>
+          <div class="run-item">
+            <div class="label mono">npm run test:ui</div>
+            <div class="desc">Only the UI scenario (<code>tests/employee-lifecycle.spec.ts</code>).</div>
+          </div>
+          <div class="run-item">
+            <div class="label mono">npm run test:api</div>
+            <div class="desc"><b style="color:var(--success)">API tests alone</b> — <code>tests/api/employee-api.spec.ts</code>. No browser launches; finishes in a few seconds.</div>
+          </div>
+          <div class="run-item">
+            <div class="label mono">npm run test:headed</div>
+            <div class="desc">UI scenario with a visible browser window.</div>
+          </div>
+          <div class="run-item">
+            <div class="label mono">npm run test:debug</div>
+            <div class="desc">Opens the Playwright Inspector to step through a run.</div>
+          </div>
+          <div class="run-item">
+            <div class="label mono">npm run report</div>
+            <div class="desc">Opens <code>playwright-report/index.html</code> from the last run.</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="structure">
+        <h2><span class="num">06</span> Project structure</h2>
+        <div class="tree">data/employee.json          <span class="comment"># data-driven input</span>
+assets/profile-picture.png  <span class="comment"># uploaded during Add Employee</span>
+<span class="dir">src/pages/</span>
+  BasePage.ts                <span class="comment"># toast + custom dropdown helpers</span>
+  LoginPage.ts
+  DashboardPage.ts
+  EmployeeListPage.ts
+  AddEmployeePage.ts
+  PersonalDetailsPage.ts
+  JobDetailsPage.ts
+<span class="dir">src/utils/</span>
+  apiClient.ts                <span class="comment"># ReqRes create / update / delete</span>
+  testDataLoader.ts           <span class="comment"># loads employee.json, builds Employee ID</span>
+src/fixtures.ts               <span class="comment"># wires page objects + apiClient into test()</span>
+<span class="dir">tests/</span>
+  employee-lifecycle.spec.ts  <span class="comment"># the 6-step UI scenario</span>
+  <span class="dir">api/</span>
+    employee-api.spec.ts      <span class="comment"># standalone API tests — no browser</span>
+playwright.config.ts          <span class="comment"># reporter, video, timeouts, retries</span></div>
+      </section>
+
+      <section id="deps">
+        <h2><span class="num">07</span> Dependencies</h2>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Package</th><th>Used for</th></tr></thead>
+            <tbody>
+              <tr><td><code>@playwright/test</code></td><td>Browser automation, test runner, assertions, API request context, HTML reporter</td></tr>
+              <tr><td><code>typescript</code></td><td>Typed page objects, fixtures and test code</td></tr>
+              <tr><td><code>@types/node</code></td><td>Node typings for <code>fs</code> / <code>path</code> in <code>testDataLoader.ts</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="notes">
+        <h2><span class="num">08</span> Notes &amp; caveats</h2>
+        <p>
+          <code>opensource-demo.orangehrmlive.com</code> is a shared public demo instance and
+          is occasionally slow to respond — navigation timeouts were raised (90s) and
+          <code>retries: 2</code> is set in <code>playwright.config.ts</code> to absorb that.
+          A run that needs a retry to pass reflects the target site's own latency, not
+          flakiness in the test logic.
+        </p>
+      </section>
+
+    </main>
+  </div>
+
+  <footer>
+    <span>employee-lifecycle.spec.ts · 1 file · 6 steps</span>
+    <span>Playwright Test · Chromium</span>
+  </footer>
+
+</div>

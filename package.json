@@ -1,0 +1,28 @@
+{
+  "name": "orangehrm-employee-lifecycle-automation",
+  "version": "1.0.0",
+  "description": "Playwright + TypeScript UI/API automation for the OrangeHRM Employee Lifecycle Management scenario",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test tests/employee-lifecycle.spec.ts",
+    "test:api": "playwright test tests/api",
+    "test:headed": "playwright test tests/employee-lifecycle.spec.ts --headed",
+    "test:debug": "playwright test --debug",
+    "report": "playwright show-report"
+  },
+  "keywords": [
+    "playwright",
+    "typescript",
+    "qa-automation",
+    "orangehrm"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.5.1",
+    "typescript": "^7.0.2"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "newEmployee": {
+    "firstName": "Ayesha",
+    "lastName": "Karim",
+    "employeeIdPrefix": "QA",
+    "profilePicture": "assets/profile-picture.png"
+  },
+  "jobUpdate": {
+    "jobTitle": "QA Engineer",
+    "employmentStatus": "Full-Time Permanent"
+  },
+  "credentials": {
+    "username": "Admin",
+    "password": "admin123"
+  }
+}
