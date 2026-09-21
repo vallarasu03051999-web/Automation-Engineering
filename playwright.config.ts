@@ -4,7 +4,7 @@ import { ADMIN_STORAGE_STATE } from './tests/global-setup';
 
 export default defineConfig({
   testDir: './tests',
-  // The full lifecycle test walks through several sequential steps against a public
+  // The full lifecycle test walks through several sequential steps against a public // testing
   // demo instance that can be slow to respond, so the overall budget is generous.
   timeout: 180_000,
   expect: { timeout: 15_000 },
