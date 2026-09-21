@@ -1,25 +1,15 @@
-import { test, expect } from '@playwright/test';
-import { ApiClient } from '../../src/utils/apiClient';
+import { test, expect } from '../../src/fixtures';
 import { loadEmployeeFixture, generateUniqueEmployeeId } from '../../src/utils/testDataLoader';
 
 // Standalone API coverage — no browser/page involved. These exercise the same
 // ApiClient used inside the UI cross-check step (employee-lifecycle.spec.ts),
-// but independently, so the API layer can be validated on its own.
+// but independently, so the API layer can be validated on its own. Setup and
+// teardown come from the shared `apiClient` fixture (src/fixtures.ts) instead
+// of each test re-implementing init/dispose.
 const fixture = loadEmployeeFixture();
 
-test.describe('Employee API', () => {
-  let apiClient: ApiClient;
-
-  test.beforeEach(async () => {
-    apiClient = new ApiClient();
-    await apiClient.init();
-  });
-
-  test.afterEach(async () => {
-    await apiClient.dispose();
-  });
-
-  test('creates an employee record and echoes back the submitted fields', async () => {
+test.describe('Employee API', { tag: ['@api', '@regression'] }, () => {
+  test('creates an employee record and echoes back the submitted fields', async ({ apiClient }) => {
     const employeeId = generateUniqueEmployeeId(fixture.newEmployee.employeeIdPrefix);
 
     const record = await apiClient.createEmployeeRecord({
@@ -36,7 +26,7 @@ test.describe('Employee API', () => {
     expect(record.employeeId, 'Response should echo the submitted employee ID').toBe(employeeId);
   });
 
-  test('updates job title and employment status on an existing record', async () => {
+  test('updates job title and employment status on an existing record', async ({ apiClient }) => {
     const employeeId = generateUniqueEmployeeId(fixture.newEmployee.employeeIdPrefix);
     const created = await apiClient.createEmployeeRecord({
       employeeId,
@@ -52,7 +42,7 @@ test.describe('Employee API', () => {
     );
   });
 
-  test('deletes a record and returns 204 No Content', async () => {
+  test('deletes a record and returns 204 No Content', async ({ apiClient }) => {
     const employeeId = generateUniqueEmployeeId(fixture.newEmployee.employeeIdPrefix);
     const created = await apiClient.createEmployeeRecord({
       employeeId,

@@ -8,7 +8,10 @@ export function loadEmployeeFixture(): EmployeeFixture {
   return JSON.parse(raw) as EmployeeFixture;
 }
 
+export function generateUniqueSuffix(): string {
+  return Date.now().toString().slice(-6);
+}
+
 export function generateUniqueEmployeeId(prefix: string): string {
-  const suffix = Date.now().toString().slice(-6);
-  return `${prefix}${suffix}`;
+  return `${prefix}${generateUniqueSuffix()}`;
 }

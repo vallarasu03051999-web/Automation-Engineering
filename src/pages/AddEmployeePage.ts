@@ -27,7 +27,9 @@ export class AddEmployeePage extends BasePage {
     await this.lastNameInput.fill(data.lastName);
     await this.employeeIdInput.fill('');
     await this.employeeIdInput.fill(employeeId);
-    await this.profilePictureInput.setInputFiles(data.profilePicture);
+    if (data.profilePicture) {
+      await this.profilePictureInput.setInputFiles(data.profilePicture);
+    }
   }
 
   async save(): Promise<void> {

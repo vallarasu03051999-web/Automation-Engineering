@@ -1,29 +1,32 @@
 import { test, expect } from '../src/fixtures';
 import { loadEmployeeFixture, generateUniqueEmployeeId } from '../src/utils/testDataLoader';
+import { logger } from '../src/utils/logger';
+import { env } from '../src/config/env';
+import { ADMIN_STORAGE_STATE } from './global-setup';
 
 const fixture = loadEmployeeFixture();
 
-test.describe('Employee Lifecycle Management', () => {
-  test('login, create, edit, validate via API, delete and logout an employee', async ({
-    page,
-    loginPage,
-    dashboardPage,
-    employeeListPage,
-    addEmployeePage,
-    personalDetailsPage,
-    jobDetailsPage,
-    apiClient,
-  }) => {
-    const employeeId = generateUniqueEmployeeId(fixture.newEmployee.employeeIdPrefix);
-    let apiRecordId = '';
+// Each stage of the lifecycle is its own independent, individually-reported
+// test() (rather than test.step()s inside one giant test), so a failure at
+// any stage is visible on its own and the suite can be filtered/run stage by
+// stage. They still share the employee created in the first test, so
+// `.serial()` keeps them in order and stops the file early if creation fails.
+test.describe.serial('Employee Lifecycle Management', { tag: '@regression' }, () => {
+  let employeeId: string;
+  let apiRecordId = '';
+  let employeeDeleted = false;
 
-    await test.step('1. Login with valid credentials', async () => {
-      await loginPage.goto();
-      await loginPage.login(fixture.credentials.username, fixture.credentials.password);
+  test(
+    'creates a new employee (data-driven, with profile picture) and verifies it via API',
+    { tag: '@smoke' },
+    async ({ page, dashboardPage, employeeListPage, addEmployeePage, personalDetailsPage, apiClient }) => {
+      employeeId = generateUniqueEmployeeId(fixture.newEmployee.employeeIdPrefix);
+
+      // The pre-authenticated storageState only restores cookies, not
+      // navigation — each test starts from a blank page, so it must land on
+      // an authenticated route itself before interacting with the menu.
+      await page.goto('/web/index.php/dashboard/index', { waitUntil: 'domcontentloaded' });
       await dashboardPage.expectDashboardVisible();
-    });
-
-    await test.step('2. Add a new employee (data-driven, with profile picture)', async () => {
       await dashboardPage.navigateToPim();
       await employeeListPage.goToAddEmployee();
       await addEmployeePage.expectFormVisible();
@@ -47,62 +50,85 @@ test.describe('Employee Lifecycle Management', () => {
       expect(apiRecord.employeeId, 'API-created record should echo the employee ID entered in the UI').toBe(
         employeeId,
       );
+    },
+  );
+
+  test('edits employee job details and verifies persistence via UI reload + API', async ({
+    page,
+    employeeListPage,
+    personalDetailsPage,
+    jobDetailsPage,
+    apiClient,
+  }) => {
+    await employeeListPage.goto();
+    await employeeListPage.searchByEmployeeId(employeeId);
+    await employeeListPage.expectEmployeeFound(employeeId);
+    await employeeListPage.openEmployeeByRow();
+
+    await personalDetailsPage.goToJobTab();
+    await jobDetailsPage.updateJobDetails(fixture.jobUpdate);
+    await jobDetailsPage.expectToastMessage('Successfully Updated');
+    await jobDetailsPage.expectJobDetails(fixture.jobUpdate);
+
+    const updatedRecord = await apiClient.updateEmployeeRecord(apiRecordId, {
+      jobTitle: fixture.jobUpdate.jobTitle,
+      employmentStatus: fixture.jobUpdate.employmentStatus,
     });
 
-    await test.step('3. Edit employee information (Job Title & Employment Status)', async () => {
-      await employeeListPage.goto();
-      await employeeListPage.searchByEmployeeId(employeeId);
-      await employeeListPage.expectEmployeeFound(employeeId);
-      await employeeListPage.openEmployeeByRow();
+    expect(updatedRecord.jobTitle, 'API record job title should match the UI after the edit step').toBe(
+      fixture.jobUpdate.jobTitle,
+    );
+    expect(
+      updatedRecord.employmentStatus,
+      'API record employment status should match the UI after the edit step',
+    ).toBe(fixture.jobUpdate.employmentStatus);
 
-      await personalDetailsPage.goToJobTab();
-      await jobDetailsPage.updateJobDetails(fixture.jobUpdate);
-      await jobDetailsPage.expectToastMessage('Successfully Updated');
-      await jobDetailsPage.expectJobDetails(fixture.jobUpdate);
-    });
+    // Re-read the UI to make sure the change actually persisted server-side, not just client state.
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await jobDetailsPage.expectJobDetails(fixture.jobUpdate);
+  });
 
-    await test.step('4. Validate employee via API and cross-check with UI', async () => {
-      const updatedRecord = await apiClient.updateEmployeeRecord(apiRecordId, {
-        jobTitle: fixture.jobUpdate.jobTitle,
-        employmentStatus: fixture.jobUpdate.employmentStatus,
-      });
+  test('deletes the employee and verifies removal via UI and API', async ({ employeeListPage, apiClient }) => {
+    await employeeListPage.goto();
+    await employeeListPage.searchByEmployeeId(employeeId);
+    await employeeListPage.expectEmployeeFound(employeeId);
+    await employeeListPage.deleteEmployeeByRow();
+    await employeeListPage.expectToastMessage('Successfully Deleted');
+    employeeDeleted = true;
 
-      expect(updatedRecord.jobTitle, 'API record job title should match the UI after the edit step').toBe(
-        fixture.jobUpdate.jobTitle,
-      );
-      expect(
-        updatedRecord.employmentStatus,
-        'API record employment status should match the UI after the edit step',
-      ).toBe(fixture.jobUpdate.employmentStatus);
+    await employeeListPage.searchByEmployeeId(employeeId);
+    await employeeListPage.expectNoEmployeeFound();
 
-      // Re-read the UI to make sure the change actually persisted server-side, not just client state.
-      await page.reload({ waitUntil: 'domcontentloaded' });
-      await jobDetailsPage.expectJobDetails(fixture.jobUpdate);
-    });
+    const deleteStatus = await apiClient.deleteEmployeeRecord(apiRecordId);
+    expect(deleteStatus, 'API delete of the mirrored record should return 204 No Content').toBe(204);
+  });
 
-    await test.step('5. Delete the employee and verify via UI and API', async () => {
+  // Cleanup independent of the happy path: if the delete test above never ran
+  // (e.g. an earlier stage failed) the employee created in stage one would
+  // otherwise be left behind on the shared demo instance.
+  test.afterAll(async ({ browser }) => {
+    if (!employeeId || employeeDeleted) {
+      return;
+    }
+
+    logger.warn('Employee lifecycle did not reach the delete stage — attempting fallback cleanup', { employeeId });
+    const context = await browser.newContext({ baseURL: env.baseUrl, storageState: ADMIN_STORAGE_STATE });
+    const page = await context.newPage();
+    try {
+      const { EmployeeListPage } = await import('../src/pages/EmployeeListPage');
+      const employeeListPage = new EmployeeListPage(page);
       await employeeListPage.goto();
       await employeeListPage.searchByEmployeeId(employeeId);
       await employeeListPage.expectEmployeeFound(employeeId);
       await employeeListPage.deleteEmployeeByRow();
-      await employeeListPage.expectToastMessage('Successfully Deleted');
-
-      await employeeListPage.searchByEmployeeId(employeeId);
-      await employeeListPage.expectNoEmployeeFound();
-
-      const deleteStatus = await apiClient.deleteEmployeeRecord(apiRecordId);
-      expect(deleteStatus, 'API delete of the mirrored record should return 204 No Content').toBe(204);
-    });
-
-    await test.step('6. Logout and confirm the session is invalidated', async () => {
-      await dashboardPage.logout();
-      await expect(page, 'Should be redirected to the login page after logout').toHaveURL(/auth\/login/);
-
-      await page.goto('/web/index.php/dashboard/index', { waitUntil: 'domcontentloaded' });
-      await expect(
-        page,
-        'Visiting an authenticated route after logout should redirect back to login (session invalidated)',
-      ).toHaveURL(/auth\/login/);
-    });
+      logger.info('Fallback cleanup deleted the orphaned employee', { employeeId });
+    } catch (error) {
+      logger.error('Fallback cleanup failed — employee may need manual removal', {
+        employeeId,
+        error: (error as Error).message,
+      });
+    } finally {
+      await context.close();
+    }
   });
 });

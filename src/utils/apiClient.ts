@@ -1,4 +1,6 @@
-import { APIRequestContext, request } from '@playwright/test';
+import { APIRequestContext, APIResponse, request } from '@playwright/test';
+import { env } from '../config/env';
+import { logger } from './logger';
 
 /**
  * The OrangeHRM demo instance does not expose a public, key-free REST API for
@@ -9,15 +11,10 @@ import { APIRequestContext, request } from '@playwright/test';
  * payload can be cross-checked against what was entered in the UI.
  */
 export class ApiClient {
-  // Deliberately just the origin: a request path starting with "/" is resolved as an
-  // absolute path against this base (WHATWG URL rules), so any "/api" prefix here would
-  // silently be dropped from every request. The "/api" segment is kept in each call's path.
-  private static readonly BASE_URL = 'https://reqres.in';
-
   private context: APIRequestContext | undefined;
 
   async init(): Promise<void> {
-    this.context = await request.newContext({ baseURL: ApiClient.BASE_URL });
+    this.context = await request.newContext({ baseURL: env.apiBaseUrl });
   }
 
   async dispose(): Promise<void> {
@@ -31,33 +28,55 @@ export class ApiClient {
     return this.context;
   }
 
+  // Generic HTTP wrapper: every domain method below is built on top of these
+  // four verbs, so logging, error handling and response parsing live in one
+  // place instead of being repeated per endpoint.
+  private async send(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, data?: unknown): Promise<APIResponse> {
+    logger.debug(`API ${method} ${path}`, data ? { data } : undefined);
+    const response = await this.api.fetch(path, { method, data });
+    if (!response.ok()) {
+      logger.error(`API ${method} ${path} failed`, { status: response.status() });
+      throw new Error(`API ${method} ${path} failed with status ${response.status()}`);
+    }
+    return response;
+  }
+
+  async get<T>(path: string): Promise<T> {
+    const response = await this.send('GET', path);
+    return response.json() as Promise<T>;
+  }
+
+  async post<T>(path: string, data: unknown): Promise<T> {
+    const response = await this.send('POST', path, data);
+    return response.json() as Promise<T>;
+  }
+
+  async put<T>(path: string, data: unknown): Promise<T> {
+    const response = await this.send('PUT', path, data);
+    return response.json() as Promise<T>;
+  }
+
+  async delete(path: string): Promise<number> {
+    const response = await this.send('DELETE', path);
+    return response.status();
+  }
+
   async createEmployeeRecord(payload: {
     employeeId: string;
     firstName: string;
     lastName: string;
   }): Promise<{ id: string; firstName: string; lastName: string; employeeId: string }> {
-    const response = await this.api.post('/api/users', { data: payload });
-    if (!response.ok()) {
-      throw new Error(`API create failed with status ${response.status()}`);
-    }
-    const body = await response.json();
-    return { id: body.id, firstName: body.firstName, lastName: body.lastName, employeeId: body.employeeId };
+    return this.post('/api/users', payload);
   }
 
   async updateEmployeeRecord(
     recordId: string,
     payload: { jobTitle: string; employmentStatus: string },
   ): Promise<{ jobTitle: string; employmentStatus: string }> {
-    const response = await this.api.put(`/api/users/${recordId}`, { data: payload });
-    if (!response.ok()) {
-      throw new Error(`API update failed with status ${response.status()}`);
-    }
-    const body = await response.json();
-    return { jobTitle: body.jobTitle, employmentStatus: body.employmentStatus };
+    return this.put(`/api/users/${recordId}`, payload);
   }
 
   async deleteEmployeeRecord(recordId: string): Promise<number> {
-    const response = await this.api.delete(`/api/users/${recordId}`);
-    return response.status();
+    return this.delete(`/api/users/${recordId}`);
   }
 }

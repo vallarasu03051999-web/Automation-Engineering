@@ -2,7 +2,7 @@ export interface NewEmployeeData {
   firstName: string;
   lastName: string;
   employeeIdPrefix: string;
-  profilePicture: string;
+  profilePicture?: string;
 }
 
 export interface JobUpdateData {
@@ -10,13 +10,15 @@ export interface JobUpdateData {
   employmentStatus: string;
 }
 
-export interface Credentials {
-  username: string;
-  password: string;
-}
-
 export interface EmployeeFixture {
   newEmployee: NewEmployeeData;
   jobUpdate: JobUpdateData;
-  credentials: Credentials;
+}
+
+export interface NewSystemUserData {
+  role: 'Admin' | 'ESS';
+  employeeName: string;
+  status: 'Enabled' | 'Disabled';
+  username: string;
+  password: string;
 }
